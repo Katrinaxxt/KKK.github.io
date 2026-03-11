@@ -1,0 +1,2584 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>沟通 Agent 系统平台</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #070A0F;
+    --surface: #0D1117;
+    --panel: #111820;
+    --border: #1E2A38;
+    --border-soft: #162030;
+    --accent: #1A8FFF;
+    --accent-dim: #0E5FAA;
+    --accent-glow: rgba(26,143,255,0.15);
+    --green: #2ECC71;
+    --green-dim: rgba(46,204,113,0.15);
+    --red: #E74C3C;
+    --red-dim: rgba(231,76,60,0.15);
+    --yellow: #F1C40F;
+    --yellow-dim: rgba(241,196,15,0.12);
+    --orange: #E67E22;
+    --text-primary: #E0EAF4;
+    --text-secondary: #7A9BB5;
+    --text-muted: #3A5068;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 14px; }
+  body {
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  /* ── Header ── */
+  .app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 28px;
+    height: 56px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: 0.02em;
+  }
+  .logo-dot {
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%,100%{opacity:1;transform:scale(1);}
+    50%{opacity:.5;transform:scale(1.3);}
+  }
+  .logo-tag {
+    font-size: 10px;
+    color: var(--text-muted);
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 2px 6px;
+    border-radius: 3px;
+    letter-spacing: .05em;
+  }
+  .main-nav {
+    display: flex;
+    gap: 2px;
+    background: var(--bg);
+    padding: 3px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  .main-nav button {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 6px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .main-nav button:hover { color: var(--text-primary); background: var(--border-soft); }
+  .main-nav button.active {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 0 12px rgba(26,143,255,.3);
+  }
+  .nav-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .status-dot { width:6px;height:6px;border-radius:50%;background:var(--green); }
+
+  /* ── Tab Content ── */
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ── Section Header ── */
+  .section-header {
+    padding: 28px 32px 20px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .section-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+  .section-subtitle {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: var(--mono);
+  }
+
+  /* ═══════════════════════════════
+     PART 1 — METHODOLOGY
+  ═══════════════════════════════ */
+  .methodology-layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    height: calc(100vh - 56px - 88px);
+  }
+  .level-sidebar {
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    background: var(--surface);
+  }
+  .level-group { border-bottom: 1px solid var(--border-soft); }
+  .level-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    cursor: pointer;
+    user-select: none;
+    transition: background .12s;
+  }
+  .level-header:hover { background: var(--panel); }
+  .level-header.open { background: var(--panel); }
+  .level-badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 3px;
+    letter-spacing: .05em;
+  }
+  .badge-l0 { background: rgba(231,76,60,.2); color: #E74C3C; border: 1px solid rgba(231,76,60,.3); }
+  .badge-l1 { background: rgba(241,196,15,.12); color: #F1C40F; border: 1px solid rgba(241,196,15,.25); }
+  .badge-l2 { background: rgba(26,143,255,.15); color: #1A8FFF; border: 1px solid rgba(26,143,255,.3); }
+  .badge-l3 { background: rgba(46,204,113,.12); color: #2ECC71; border: 1px solid rgba(46,204,113,.25); }
+  .badge-l4 { background: rgba(230,126,34,.12); color: #E67E22; border: 1px solid rgba(230,126,34,.25); }
+  .level-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-primary);
+    flex: 1;
+  }
+  .level-chevron {
+    font-size: 10px;
+    color: var(--text-muted);
+    transition: transform .15s;
+  }
+  .level-header.open .level-chevron { transform: rotate(90deg); }
+  .level-files { display: none; padding: 4px 0 8px; }
+  .level-header.open + .level-files { display: block; }
+  .file-node {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px 6px 28px;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--text-secondary);
+    transition: all .12s;
+    border-left: 2px solid transparent;
+  }
+  .file-node:hover { color: var(--text-primary); background: var(--panel); }
+  .file-node.active { color: var(--accent); border-left-color: var(--accent); background: var(--accent-glow); }
+  .file-node.folder { color: var(--text-muted); font-weight: 500; cursor: default; padding: 4px 16px 2px 28px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+  .file-icon { font-size: 11px; flex-shrink: 0; }
+  .file-viewer {
+    overflow-y: auto;
+    background: var(--bg);
+  }
+  .file-viewer-inner {
+    padding: 28px 32px;
+  }
+  .viewer-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 60vh;
+    gap: 12px;
+    color: var(--text-muted);
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+  .viewer-empty .big-icon { font-size: 48px; opacity: .3; }
+  .viewer-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .viewer-file-path {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+  .viewer-file-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .file-type-badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-weight: 600;
+    letter-spacing: .04em;
+  }
+  .type-guardrails { background: rgba(231,76,60,.15); color: #E74C3C; border: 1px solid rgba(231,76,60,.25); }
+  .type-rules { background: rgba(26,143,255,.12); color: #1A8FFF; border: 1px solid rgba(26,143,255,.25); }
+  .type-spec { background: rgba(241,196,15,.1); color: #F1C40F; border: 1px solid rgba(241,196,15,.2); }
+  .type-skills { background: rgba(46,204,113,.1); color: #2ECC71; border: 1px solid rgba(46,204,113,.2); }
+  .type-overrides { background: rgba(230,126,34,.1); color: #E67E22; border: 1px solid rgba(230,126,34,.2); }
+  .type-playbook { background: rgba(155,89,182,.12); color: #9B59B6; border: 1px solid rgba(155,89,182,.25); }
+  .type-context { background: rgba(26,143,255,.08); color: #5499CC; border: 1px solid rgba(26,143,255,.15); }
+  .viewer-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 20px;
+    padding: 12px 16px;
+    background: var(--panel);
+    border-left: 3px solid var(--accent-dim);
+    border-radius: 0 6px 6px 0;
+  }
+  pre.code-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.7;
+    color: #C9D8E8;
+    position: relative;
+  }
+  .code-lang {
+    position: absolute;
+    top: 8px; right: 12px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
+  .code-comment { color: #3A6080; }
+  .code-key { color: #79C0FF; }
+  .code-string { color: #A5D6FF; }
+  .code-bool { color: #F78166; }
+  .code-number { color: #D2A679; }
+  pre.code-block .hl-comment { color: #4A7090; font-style: italic; }
+
+  /* Level info cards */
+  .level-info-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .info-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .info-card-label { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; font-family: var(--mono); }
+  .info-card-value { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+
+  /* Directory overview */
+  .dir-overview {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .dir-overview h3 { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 12px; text-transform: uppercase; letter-spacing: .06em; }
+  .dir-tree {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: #5A7F9F;
+    line-height: 1.8;
+  }
+  .dir-tree .dir-name { color: #79C0FF; }
+  .dir-tree .file-name { color: var(--text-primary); cursor: pointer; text-decoration: underline; text-decoration-color: transparent; transition: all .12s; }
+  .dir-tree .file-name:hover { color: var(--accent); text-decoration-color: var(--accent); }
+
+  /* ═══════════════════════════════
+     PART 2 — FLOW EXAMPLE
+  ═══════════════════════════════ */
+  .flow-layout {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    height: calc(100vh - 56px - 88px);
+  }
+  .flow-steps-panel {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 20px 0;
+  }
+  .flow-step-item {
+    display: flex;
+    gap: 12px;
+    padding: 12px 20px;
+    cursor: pointer;
+    transition: all .12s;
+    border-left: 3px solid transparent;
+    position: relative;
+  }
+  .flow-step-item::after {
+    content: '';
+    position: absolute;
+    left: 28px;
+    top: 46px;
+    width: 2px;
+    height: calc(100% - 22px);
+    background: var(--border-soft);
+  }
+  .flow-step-item:last-child::after { display: none; }
+  .flow-step-item:hover { background: var(--panel); }
+  .flow-step-item.active { background: var(--panel); border-left-color: var(--accent); }
+  .step-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    transition: all .15s;
+    z-index: 1;
+  }
+  .flow-step-item.active .step-num,
+  .flow-step-item:hover .step-num {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .step-info { flex: 1; min-width: 0; }
+  .step-phase {
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    margin-bottom: 2px;
+  }
+  .step-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .step-result {
+    font-size: 11px;
+    margin-top: 2px;
+  }
+  .result-success { color: var(--green); }
+  .result-fail { color: var(--red); }
+  .result-neutral { color: var(--text-muted); }
+
+  .flow-detail-panel {
+    overflow-y: auto;
+    padding: 28px 32px;
+    background: var(--bg);
+  }
+  .detail-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 60vh;
+    gap: 8px;
+    color: var(--text-muted);
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+  .detail-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .detail-step-num {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    box-shadow: 0 0 16px rgba(26,143,255,.35);
+  }
+  .detail-meta { flex: 1; }
+  .detail-phase { font-size: 11px; color: var(--text-muted); font-family: var(--mono); text-transform: uppercase; letter-spacing: .06em; }
+  .detail-title { font-size: 17px; font-weight: 600; color: var(--text-primary); }
+  .detail-section { margin-bottom: 20px; }
+  .detail-section-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .detail-section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-soft);
+  }
+  .config-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  .config-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    cursor: pointer;
+    transition: all .12s;
+  }
+  .config-chip:hover {
+    background: var(--accent-glow);
+    border-color: var(--accent-dim);
+    color: var(--accent);
+  }
+  .config-chip .chip-badge {
+    font-size: 9px;
+    padding: 1px 4px;
+    border-radius: 2px;
+    font-weight: 600;
+  }
+  .action-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .action-box-title { font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; }
+  .action-box p { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+  .result-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .result-box-header {
+    padding: 8px 16px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border-soft);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .result-box-header span { font-size: 11px; font-family: var(--mono); color: var(--text-muted); }
+  .result-box pre {
+    padding: 14px 16px;
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.7;
+    color: #A5C8E8;
+    overflow-x: auto;
+  }
+  .facts-table { width: 100%; border-collapse: collapse; }
+  .facts-table td {
+    padding: 6px 10px;
+    font-size: 12px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .facts-table td:first-child { color: var(--text-muted); font-family: var(--mono); width: 45%; }
+  .facts-table td:last-child { color: var(--text-primary); font-weight: 500; }
+  .tag-success { color: var(--green); }
+  .tag-fail { color: var(--red); }
+  .tag-warn { color: var(--yellow); }
+  .tag-info { color: var(--accent); }
+
+  /* ═══════════════════════════════
+     PART 3 — SYSTEM PAGES
+  ═══════════════════════════════ */
+  .system-layout { display: flex; height: calc(100vh - 56px - 88px); }
+  .system-sidebar {
+    width: 200px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 16px 0;
+    flex-shrink: 0;
+  }
+  .sys-nav-group { margin-bottom: 16px; }
+  .sys-nav-group-label {
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    padding: 0 16px 6px;
+  }
+  .sys-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 16px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all .12s;
+    border-left: 2px solid transparent;
+  }
+  .sys-nav-item:hover { color: var(--text-primary); background: var(--panel); }
+  .sys-nav-item.active { color: var(--accent); background: var(--accent-glow); border-left-color: var(--accent); }
+  .sys-nav-item .nav-icon { font-size: 14px; width: 18px; text-align: center; }
+  .sys-nav-badge {
+    margin-left: auto;
+    background: var(--accent);
+    color: #fff;
+    font-size: 10px;
+    padding: 1px 5px;
+    border-radius: 10px;
+    font-family: var(--mono);
+  }
+  .system-main { flex: 1; overflow-y: auto; }
+  .system-page { display: none; padding: 24px 28px; }
+  .system-page.active { display: block; }
+
+  /* Page headers */
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .page-title { font-size: 17px; font-weight: 600; }
+  .page-subtitle { font-size: 12px; color: var(--text-muted); margin-top: 2px; font-family: var(--mono); }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 16px;
+    border-radius: 6px;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all .15s;
+    border: none;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #1E9AFF; box-shadow: 0 0 12px rgba(26,143,255,.3); }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); }
+  .btn-outline:hover { border-color: var(--accent-dim); color: var(--text-primary); }
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
+  .btn-danger { background: transparent; border: 1px solid rgba(231,76,60,.3); color: var(--red); }
+  .btn-danger:hover { background: var(--red-dim); }
+
+  /* Stats row */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .stat-card.blue::before { background: var(--accent); }
+  .stat-card.green::before { background: var(--green); }
+  .stat-card.red::before { background: var(--red); }
+  .stat-card.yellow::before { background: var(--yellow); }
+  .stat-label { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; font-family: var(--mono); }
+  .stat-value { font-size: 26px; font-weight: 700; font-family: var(--mono); }
+  .stat-card.blue .stat-value { color: var(--accent); }
+  .stat-card.green .stat-value { color: var(--green); }
+  .stat-card.red .stat-value { color: var(--red); }
+  .stat-card.yellow .stat-value { color: var(--yellow); }
+  .stat-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+  /* Data Table */
+  .data-table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .table-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+  }
+  .search-input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-family: var(--sans);
+    font-size: 12px;
+    color: var(--text-primary);
+    width: 220px;
+  }
+  .search-input::placeholder { color: var(--text-muted); }
+  .search-input:focus { outline: none; border-color: var(--accent-dim); }
+  .filter-bar { display: flex; gap: 8px; }
+  .filter-btn {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all .12s;
+  }
+  .filter-btn:hover, .filter-btn.active { border-color: var(--accent-dim); color: var(--accent); background: var(--accent-glow); }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    text-align: left;
+    padding: 10px 16px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+    white-space: nowrap;
+  }
+  td {
+    padding: 11px 16px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border-soft);
+    vertical-align: middle;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--panel); }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+    font-family: var(--mono);
+    white-space: nowrap;
+  }
+  .badge-success { background: var(--green-dim); color: var(--green); border: 1px solid rgba(46,204,113,.2); }
+  .badge-running { background: rgba(26,143,255,.12); color: var(--accent); border: 1px solid rgba(26,143,255,.2); }
+  .badge-handoff { background: var(--yellow-dim); color: var(--yellow); border: 1px solid rgba(241,196,15,.2); }
+  .badge-failed { background: var(--red-dim); color: var(--red); border: 1px solid rgba(231,76,60,.2); }
+  .badge-pending { background: rgba(90,127,159,.1); color: var(--text-muted); border: 1px solid var(--border-soft); }
+  .badge-dot { width:5px;height:5px;border-radius:50%;background:currentColor; }
+  .text-mono { font-family: var(--mono); font-size: 12px; }
+  .text-muted { color: var(--text-muted); }
+  .action-btns { display: flex; gap: 6px; }
+
+  /* Progress bar */
+  .progress-bar {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    width: 80px;
+    display: inline-block;
+    vertical-align: middle;
+  }
+  .progress-fill { height: 100%; border-radius: 2px; background: var(--accent); transition: width .3s; }
+  .progress-fill.green { background: var(--green); }
+
+  /* Form */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-grid.cols3 { grid-template-columns: 1fr 1fr 1fr; }
+  .form-group { margin-bottom: 0; }
+  .form-group.full { grid-column: 1 / -1; }
+  label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    margin-bottom: 6px;
+  }
+  .form-input, .form-select, .form-textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--text-primary);
+    transition: border-color .15s;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    outline: none;
+    border-color: var(--accent-dim);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+  .form-textarea { resize: vertical; min-height: 80px; font-family: var(--mono); font-size: 12px; }
+  .form-select { cursor: pointer; appearance: none; }
+  .form-input::placeholder { color: var(--text-muted); }
+  .form-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .form-section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-soft);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .channel-checkboxes { display: flex; flex-wrap: wrap; gap: 10px; }
+  .channel-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all .12s;
+    user-select: none;
+  }
+  .channel-check input { accent-color: var(--accent); width:14px;height:14px; }
+  .channel-check:has(input:checked) { border-color: var(--accent-dim); background: var(--accent-glow); color: var(--accent); }
+
+  /* Log viewer */
+  .log-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .log-stream {
+    background: #050810;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    height: 480px;
+    overflow-y: auto;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    line-height: 1.8;
+  }
+  .log-line { display: flex; gap: 12px; }
+  .log-time { color: #2A4060; flex-shrink: 0; }
+  .log-level { flex-shrink: 0; width: 50px; text-align: center; }
+  .log-level.info { color: var(--accent); }
+  .log-level.success { color: var(--green); }
+  .log-level.warn { color: var(--yellow); }
+  .log-level.error { color: var(--red); }
+  .log-msg { color: #A0C0D8; }
+  .log-msg .hl { color: var(--text-primary); font-weight: 600; }
+  .log-msg .dim { color: var(--text-muted); }
+
+  /* Detail drawer */
+  .agent-detail-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 14px;
+  }
+  .agent-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+  }
+  .agent-card-name { font-size: 14px; font-weight: 600; }
+  .agent-card-id { font-family: var(--mono); font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .agent-card-body { padding: 16px 18px; }
+  .agent-info-row { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 12px; }
+  .agent-info-item label { font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 3px; }
+  .agent-info-item span { font-size: 13px; font-weight: 500; }
+  .channel-tags { display: flex; gap: 6px; }
+  .channel-tag {
+    font-size: 11px;
+    font-family: var(--mono);
+    padding: 2px 8px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    background: var(--panel);
+  }
+  .channel-tag.active { border-color: var(--accent-dim); color: var(--accent); background: var(--accent-glow); }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.75);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    width: 680px;
+    max-width: 94vw;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 24px 80px rgba(0,0,0,.6);
+  }
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .modal-title { font-size: 14px; font-weight: 600; }
+  .modal-path { font-family: var(--mono); font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .modal-close {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: all .12s;
+    line-height: 1;
+  }
+  .modal-close:hover { background: var(--red-dim); border-color: var(--red); color: var(--red); }
+  .modal-body {
+    overflow-y: auto;
+    padding: 20px;
+    flex: 1;
+  }
+  .modal-body pre {
+    background: var(--bg);
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    padding: 18px;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.75;
+    color: #A5C8E8;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .modal-meta { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+
+  /* Scrollbars */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+  /* Responsive tweaks */
+  @media (max-width:900px) {
+    .methodology-layout, .flow-layout, .system-layout { grid-template-columns: 1fr; }
+    .stats-row { grid-template-columns: 1fr 1fr; }
+    .form-grid { grid-template-columns: 1fr; }
+  }
+
+  /* Misc */
+  .divider { height: 1px; background: var(--border-soft); margin: 16px 0; }
+  .flex-row { display: flex; align-items: center; gap: 8px; }
+  .ml-auto { margin-left: auto; }
+  .mt-16 { margin-top: 16px; }
+  .gap-chip { display: flex; flex-wrap: wrap; gap: 6px; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- ─── Header ─── -->
+  <header class="app-header">
+    <div class="logo">
+      <div class="logo-dot"></div>
+      沟通 Agent 系统平台
+      <span class="logo-tag">v2.1</span>
+    </div>
+    <nav class="main-nav">
+      <button class="active" onclick="switchTab(1,this)">⚙ 分层方法论</button>
+      <button onclick="switchTab(2,this)">▶ 退款流程示例</button>
+      <button onclick="switchTab(3,this)">⊞ 系统管理</button>
+    </nav>
+    <div class="nav-status">
+      <span class="status-dot"></span>
+      <span>3 agents running</span>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════
+       TAB 1 — METHODOLOGY
+  ═══════════════════════════════ -->
+  <section id="tab-1" class="tab-content active">
+    <div class="section-header">
+      <div class="section-title">分层配置文档设计</div>
+      <div class="section-subtitle">communication-agent / layered-config / L0 → L4</div>
+    </div>
+    <div class="methodology-layout">
+      <!-- Sidebar: file tree -->
+      <div class="level-sidebar" id="fileSidebar"></div>
+      <!-- Main: file viewer -->
+      <div class="file-viewer">
+        <div class="file-viewer-inner" id="fileViewerContent">
+          <div class="viewer-empty">
+            <div class="big-icon">📂</div>
+            <div>点击左侧文件查看配置详情</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════
+       TAB 2 — FLOW EXAMPLE
+  ═══════════════════════════════ -->
+  <section id="tab-2" class="tab-content">
+    <div class="section-header">
+      <div class="section-title">酒旅退款场景 — 执行流程示例</div>
+      <div class="section-subtitle">case_20260311_001 · merchant_123 · REFUND_INTENT · 17:00–19:00</div>
+    </div>
+    <div class="flow-layout">
+      <div class="flow-steps-panel" id="flowStepsPanel"></div>
+      <div class="flow-detail-panel" id="flowDetailPanel">
+        <div class="detail-empty">
+          <div style="font-size:40px;opacity:.3">↑</div>
+          <div>点击左侧步骤查看详情</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════
+       TAB 3 — SYSTEM MANAGEMENT
+  ═══════════════════════════════ -->
+  <section id="tab-3" class="tab-content">
+    <div class="section-header">
+      <div class="section-title">系统管理控制台</div>
+      <div class="section-subtitle">agent instances · tasks · logs · configuration</div>
+    </div>
+    <div class="system-layout">
+      <!-- Sidebar -->
+      <div class="system-sidebar">
+        <div class="sys-nav-group">
+          <div class="sys-nav-group-label">概览</div>
+          <div class="sys-nav-item active" onclick="switchSysPage('dashboard',this)">
+            <span class="nav-icon">◈</span> 仪表盘
+          </div>
+        </div>
+        <div class="sys-nav-group">
+          <div class="sys-nav-group-label">实例</div>
+          <div class="sys-nav-item" onclick="switchSysPage('instances',this)">
+            <span class="nav-icon">◉</span> 实例管理
+            <span class="sys-nav-badge">5</span>
+          </div>
+          <div class="sys-nav-item" onclick="switchSysPage('create',this)">
+            <span class="nav-icon">＋</span> 创建实例
+          </div>
+        </div>
+        <div class="sys-nav-group">
+          <div class="sys-nav-group-label">任务</div>
+          <div class="sys-nav-item" onclick="switchSysPage('tasks',this)">
+            <span class="nav-icon">◻</span> 任务管理
+            <span class="sys-nav-badge">12</span>
+          </div>
+          <div class="sys-nav-item" onclick="switchSysPage('logs',this)">
+            <span class="nav-icon">≡</span> 日志记录
+          </div>
+        </div>
+        <div class="sys-nav-group">
+          <div class="sys-nav-group-label">配置</div>
+          <div class="sys-nav-item" onclick="switchSysPage('channels',this)">
+            <span class="nav-icon">⇌</span> 渠道配置
+          </div>
+        </div>
+      </div>
+      <!-- Main content -->
+      <div class="system-main">
+        <!-- Dashboard -->
+        <div class="system-page active" id="page-dashboard">
+          <div class="page-header">
+            <div><div class="page-title">系统概览</div><div class="page-subtitle">实时运行状态</div></div>
+          </div>
+          <div class="stats-row">
+            <div class="stat-card blue"><div class="stat-label">运行中任务</div><div class="stat-value">12</div><div class="stat-sub">↑3 较昨日</div></div>
+            <div class="stat-card green"><div class="stat-label">今日成功率</div><div class="stat-value">78%</div><div class="stat-sub">SUCCESS_AUTO: 94 次</div></div>
+            <div class="stat-card yellow"><div class="stat-label">转人工数</div><div class="stat-value">18</div><div class="stat-sub">TIMEOUT: 12 · 无渠道: 6</div></div>
+            <div class="stat-card red"><div class="stat-label">失败任务</div><div class="stat-value">4</div><div class="stat-sub">Context_Failed: 2</div></div>
+          </div>
+          <div class="data-table-wrap" style="margin-bottom:20px">
+            <div class="table-toolbar"><span style="font-size:13px;font-weight:600">近期活跃任务</span></div>
+            <table>
+              <tr><th>任务 ID</th><th>Agent 实例</th><th>对象</th><th>当前渠道</th><th>状态</th><th>进度</th></tr>
+              <tr><td class="text-mono">T20260310_091</td><td>refund_agent_001</td><td>merchant_210</td><td>CALL</td><td><span class="badge badge-running"><span class="badge-dot"></span>执行中</span></td><td><div class="progress-bar"><div class="progress-fill" style="width:60%"></div></div></td></tr>
+              <tr><td class="text-mono">T20260310_088</td><td>refund_agent_001</td><td>merchant_198</td><td>SMS</td><td><span class="badge badge-success"><span class="badge-dot"></span>成功</span></td><td><div class="progress-bar"><div class="progress-fill green" style="width:100%"></div></div></td></tr>
+              <tr><td class="text-mono">T20260310_085</td><td>punish_agent_001</td><td>user_5521</td><td>SMS</td><td><span class="badge badge-handoff"><span class="badge-dot"></span>转人工</span></td><td><div class="progress-bar"><div class="progress-fill" style="width:80%;background:var(--yellow)"></div></div></td></tr>
+              <tr><td class="text-mono">T20260310_081</td><td>growth_agent_002</td><td>creator_331</td><td>WECHAT</td><td><span class="badge badge-running"><span class="badge-dot"></span>执行中</span></td><td><div class="progress-bar"><div class="progress-fill" style="width:40%"></div></div></td></tr>
+              <tr><td class="text-mono">T20260310_074</td><td>refund_agent_001</td><td>merchant_177</td><td>—</td><td><span class="badge badge-failed"><span class="badge-dot"></span>失败</span></td><td><div class="progress-bar"><div class="progress-fill" style="width:20%;background:var(--red)"></div></div></td></tr>
+            </table>
+          </div>
+        </div>
+
+        <!-- Instances -->
+        <div class="system-page" id="page-instances">
+          <div class="page-header">
+            <div><div class="page-title">Agent 实例管理</div><div class="page-subtitle">管理所有已实例化的沟通 Agent</div></div>
+            <button class="btn btn-primary" onclick="switchSysPage('create', document.querySelector('.sys-nav-item:nth-child(2)'))">＋ 创建实例</button>
+          </div>
+          <div id="instanceList"></div>
+        </div>
+
+        <!-- Create Instance -->
+        <div class="system-page" id="page-create">
+          <div class="page-header">
+            <div><div class="page-title">创建沟通 Agent 实例</div><div class="page-subtitle">基于模板配置，实例化新的沟通 Agent</div></div>
+          </div>
+          <form onsubmit="handleCreateAgent(event)">
+            <div class="form-section">
+              <div class="form-section-title">◈ 基本信息</div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>实例名称 *</label>
+                  <input class="form-input" placeholder="e.g. 酒旅退款-沟通Agent" required>
+                </div>
+                <div class="form-group">
+                  <label>实例 ID *</label>
+                  <input class="form-input" placeholder="e.g. refund_agent_003" required>
+                </div>
+                <div class="form-group">
+                  <label>业务场景 *</label>
+                  <select class="form-select">
+                    <option>hotel_refund — 酒旅退款</option>
+                    <option>account_punish — 账号处罚申诉</option>
+                    <option>merchant_recruit — 商家招募</option>
+                    <option>creator_growth — 作者培养</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>沟通目标 *</label>
+                  <select class="form-select">
+                    <option>REFUND_INTENT — 获取退款意图</option>
+                    <option>NOTIFICATION — 信息通知</option>
+                    <option>SUPPLEMENT — 补充材料</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>沟通对象 *</label>
+                  <select class="form-select">
+                    <option>MERCHANT — 商家</option>
+                    <option>USER — 用户</option>
+                    <option>CREATOR — 创作者</option>
+                    <option>INTERNAL — 内部员工</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>置信度阈值</label>
+                  <input class="form-input" type="number" step="0.05" min="0" max="1" value="0.80">
+                </div>
+              </div>
+            </div>
+            <div class="form-section">
+              <div class="form-section-title">⇌ 渠道配置</div>
+              <div class="form-group" style="margin-bottom:14px">
+                <label>启用渠道</label>
+                <div class="channel-checkboxes">
+                  <label class="channel-check"><input type="checkbox" checked> 📞 外呼 CALL</label>
+                  <label class="channel-check"><input type="checkbox" checked> 💬 短信 SMS</label>
+                  <label class="channel-check"><input type="checkbox"> 🔗 企业微信 WECHAT</label>
+                  <label class="channel-check"><input type="checkbox"> 🐦 飞书 FEISHU</label>
+                </div>
+              </div>
+              <div class="form-grid cols3">
+                <div class="form-group">
+                  <label>渠道优先顺序</label>
+                  <input class="form-input" value="CALL, SMS" placeholder="CALL, SMS, WECHAT">
+                </div>
+                <div class="form-group">
+                  <label>每渠道最大尝试次数</label>
+                  <input class="form-input" type="number" value="2">
+                </div>
+                <div class="form-group">
+                  <label>失败等待时间（秒）</label>
+                  <input class="form-input" type="number" value="300">
+                </div>
+              </div>
+            </div>
+            <div class="form-section">
+              <div class="form-section-title">⏱ 沟通约束</div>
+              <div class="form-grid cols3">
+                <div class="form-group">
+                  <label>每日最大沟通次数</label>
+                  <input class="form-input" type="number" value="3">
+                </div>
+                <div class="form-group">
+                  <label>允许沟通时段（开始）</label>
+                  <input class="form-input" type="time" value="09:00">
+                </div>
+                <div class="form-group">
+                  <label>允许沟通时段（结束）</label>
+                  <input class="form-input" type="time" value="21:00">
+                </div>
+                <div class="form-group">
+                  <label>SLA 转人工阈值（分钟）</label>
+                  <input class="form-input" type="number" value="15">
+                </div>
+                <div class="form-group">
+                  <label>情绪风险检测</label>
+                  <select class="form-select"><option>启用</option><option>关闭</option></select>
+                </div>
+                <div class="form-group">
+                  <label>自动追问（触达无意图）</label>
+                  <select class="form-select"><option>启用</option><option>关闭</option></select>
+                </div>
+              </div>
+            </div>
+            <div class="form-section">
+              <div class="form-section-title">📝 Playbook 描述（可选）</div>
+              <div class="form-group">
+                <label>实例说明（人工可读，不参与运行时）</label>
+                <textarea class="form-textarea" rows="4" placeholder="描述该 Agent 的用途、适用场景及注意事项…"></textarea>
+              </div>
+            </div>
+            <div class="flex-row" style="justify-content:flex-end;gap:10px">
+              <button type="button" class="btn btn-outline">取消</button>
+              <button type="submit" class="btn btn-primary">创建实例</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Tasks -->
+        <div class="system-page" id="page-tasks">
+          <div class="page-header">
+            <div><div class="page-title">任务管理</div><div class="page-subtitle">所有沟通任务的生命周期管理</div></div>
+            <div class="flex-row">
+              <button class="btn btn-outline btn-sm">导出</button>
+            </div>
+          </div>
+          <div class="stats-row" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+            <div class="stat-card blue"><div class="stat-label">总任务数</div><div class="stat-value">327</div></div>
+            <div class="stat-card green"><div class="stat-label">自动完成</div><div class="stat-value">254</div></div>
+            <div class="stat-card yellow"><div class="stat-label">转人工</div><div class="stat-value">51</div></div>
+            <div class="stat-card red"><div class="stat-label">失败</div><div class="stat-value">22</div></div>
+          </div>
+          <div class="data-table-wrap">
+            <div class="table-toolbar">
+              <input class="search-input" placeholder="搜索任务 ID、商家 ID…">
+              <div class="filter-bar">
+                <button class="filter-btn active" onclick="filterTasks('all',this)">全部</button>
+                <button class="filter-btn" onclick="filterTasks('running',this)">执行中</button>
+                <button class="filter-btn" onclick="filterTasks('success',this)">成功</button>
+                <button class="filter-btn" onclick="filterTasks('handoff',this)">转人工</button>
+                <button class="filter-btn" onclick="filterTasks('failed',this)">失败</button>
+              </div>
+            </div>
+            <table>
+              <tr><th>任务 ID</th><th>Agent 实例</th><th>目标对象</th><th>沟通目标</th><th>渠道尝试</th><th>意图结果</th><th>状态</th><th>创建时间</th><th>操作</th></tr>
+              <tbody id="taskTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Logs -->
+        <div class="system-page" id="page-logs">
+          <div class="page-header">
+            <div><div class="page-title">日志记录</div><div class="page-subtitle">实时沟通任务执行日志流</div></div>
+          </div>
+          <div class="log-controls">
+            <input class="search-input" placeholder="过滤日志…" style="width:240px">
+            <button class="filter-btn active">全部</button>
+            <button class="filter-btn">INFO</button>
+            <button class="filter-btn">SUCCESS</button>
+            <button class="filter-btn">WARN</button>
+            <button class="filter-btn">ERROR</button>
+            <button class="btn btn-outline btn-sm" onclick="refreshLogs()">↺ 刷新</button>
+          </div>
+          <div class="log-stream" id="logStream"></div>
+        </div>
+
+        <!-- Channels -->
+        <div class="system-page" id="page-channels">
+          <div class="page-header">
+            <div><div class="page-title">渠道配置管理</div><div class="page-subtitle">平台支持的沟通渠道及属性配置</div></div>
+          </div>
+          <div id="channelCards"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ═══════════════════════════════
+     CONFIG FILE MODAL
+═══════════════════════════════ -->
+<div class="modal-overlay" id="configModal" onclick="closeModal(event)">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modalTitle">config.yaml</div>
+        <div class="modal-path" id="modalPath"></div>
+      </div>
+      <button class="modal-close" onclick="document.getElementById('configModal').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-meta" id="modalMeta"></div>
+      <pre id="modalContent"></pre>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════
+   DATA: CONFIG FILES
+══════════════════════════════════════════════════════ */
+const CONFIG_FILES = {
+  'l0-guardrails': {
+    name: 'guardrails.yaml',
+    path: 'communication-agent/L0_platform_hard_limits/guardrails.yaml',
+    level: 'L0',
+    type: 'guardrails',
+    desc: '定义全平台强制校验规则，任何沟通任务不得违反。违反规则时，系统将立即终止任务、移除渠道或触发转人工。',
+    content: `# ═══════════════════════════════════════════════════
+# L0 Platform Hard Limits — guardrails.yaml
+# 维护方: 平台研发 · 不可被任何下层配置覆盖
+# ═══════════════════════════════════════════════════
+
+rules:
+
+  - name: night_call_ban
+    description: 禁止在 21:00 至次日 9:00 发起外呼
+    condition: time.hour < 9 or time.hour >= 21
+    action: remove_channel [CALL]
+    severity: error
+
+  - name: blacklist_check
+    description: 目标 ID 必须通过黑名单校验，命中则终止任务
+    condition: targetId in blacklist
+    action: abort_task
+    severity: error
+
+  - name: sensitive_word_transfer
+    description: 用户消息含敏感词立即转人工
+    condition: userMessage contains sensitiveWord
+    action: handoff
+    severity: warning
+
+  - name: max_daily_attempts_per_channel
+    description: 单个渠道每日最多尝试 3 次（运营配置不得超过此值）
+    condition: dailyAttempts[channel] >= 3
+    action: remove_channel [channel]
+    severity: error
+
+  - name: sla_forced_transfer
+    description: 任务剩余时间小于 15 分钟强制转人工
+    condition: timeRemaining < 15
+    action: handoff
+    severity: error`
+  },
+  'l0-audit': {
+    name: 'audit_spec.yaml',
+    path: 'communication-agent/L0_platform_hard_limits/audit_spec.yaml',
+    level: 'L0',
+    type: 'spec',
+    desc: '定义操作审计规范，所有与渠道的交互必须记录，保留 30 天。',
+    content: `# ═══════════════════════════════════════════════════
+# L0 Platform Hard Limits — audit_spec.yaml
+# 维护方: 平台研发
+# ═══════════════════════════════════════════════════
+
+audit:
+  enabled: true
+  required_fields:
+    - timestamp
+    - operator
+    - action
+    - targetId
+    - channel
+    - request
+    - response
+  retention_days: 30
+  actions_to_log:
+    - channel_call
+    - handoff
+    - task_completion
+    - task_failed
+    - context_failed`
+  },
+  'l1-channels': {
+    name: 'channels.yaml',
+    path: 'communication-agent/L1_platform_default/channels.yaml',
+    level: 'L1',
+    type: 'spec',
+    desc: '定义平台支持的所有渠道及基础属性，作为能力全集，供下层配置引用。',
+    content: `# ═══════════════════════════════════════════════════
+# L1 Platform Default — channels.yaml
+# 维护方: 平台研发 · 可被 L2/L3 层覆盖
+# ═══════════════════════════════════════════════════
+
+channels:
+
+  - name: CALL
+    display_name: 外呼
+    is_interruptive: true     # 强打断，会中断用户当前活动
+    frequency_control: true   # 支持频次控制
+    cost: 0.30                # 默认成本（元/次）
+    intrusiveness: HIGH
+    enabled: true
+
+  - name: SMS
+    display_name: 短信
+    is_interruptive: false
+    frequency_control: true
+    cost: 0.05
+    intrusiveness: MEDIUM
+    enabled: true
+
+  - name: WECHAT
+    display_name: 企业微信
+    is_interruptive: false
+    frequency_control: false
+    cost: 0.00
+    intrusiveness: LOW
+    enabled: true
+
+  - name: FEISHU
+    display_name: 飞书
+    is_interruptive: false
+    frequency_control: false
+    cost: 0.00
+    intrusiveness: LOW
+    enabled: true`
+  },
+  'l1-skill-call': {
+    name: 'call.skill.yaml',
+    path: 'communication-agent/L1_platform_default/skills/call.skill.yaml',
+    level: 'L1',
+    type: 'skills',
+    desc: '外呼技能定义：向指定号码发起外呼，播放剧本并结构化识别意图。',
+    content: `# ═══════════════════════════════════════════════════
+# L1 Platform Default — skills/call.skill.yaml
+# ═══════════════════════════════════════════════════
+
+name: CALL
+description: 向指定号码发起外呼，播放剧本并识别意图
+version: 1.0.0
+
+input:
+  targetId:
+    type: string
+    description: 目标对象 ID（如商家 ID）
+    required: true
+  bizContext:
+    type: object
+    description: 业务上下文
+    required: true
+    properties:
+      bizType:
+        type: string
+        enum: [refund, recruitment, notification, supplement]
+        required: true
+
+output:
+  touchStatus:
+    type: string
+    enum: [REACHED, NOT_REACHED]
+    description: 触达状态（电话是否接通）
+  intent:
+    type: string
+    enum: [AGREE, REJECT, PARTIAL, NONE]
+    description: 识别到的意图
+  confidence:
+    type: float
+    minimum: 0
+    maximum: 1
+    description: 意图置信度，供转人工判断
+  businessCompleted:
+    type: boolean
+    description: 业务目标是否已完成
+  rawResult:
+    type: object
+    description: 渠道原始返回（日志用）`
+  },
+  'l1-skill-sms': {
+    name: 'sms.skill.yaml',
+    path: 'communication-agent/L1_platform_default/skills/sms.skill.yaml',
+    level: 'L1',
+    type: 'skills',
+    desc: '短信技能定义：向指定号码发送短信，确认下发状态，不依赖实时回复。',
+    content: `# ═══════════════════════════════════════════════════
+# L1 Platform Default — skills/sms.skill.yaml
+# ═══════════════════════════════════════════════════
+
+name: SMS
+description: 向目标号码发送业务短信，确认下发状态
+version: 1.0.0
+
+input:
+  targetId:
+    type: string
+    required: true
+  bizContext:
+    type: object
+    required: true
+    properties:
+      bizType:
+        type: string
+        enum: [refund, recruitment, notification, supplement]
+        required: true
+
+output:
+  touchStatus:
+    type: string
+    enum: [REACHED, NOT_REACHED]
+    description: 短信是否成功下发
+  intent:
+    type: string
+    enum: [NONE]
+    description: 短信无法实时获取意图，固定为 NONE
+  confidence:
+    type: float
+    description: 固定为 0，后续通过人工或回调获取
+  businessCompleted:
+    type: boolean
+    description: 仅通知类场景可能为 true`
+  },
+  'l1-skill-wechat': {
+    name: 'wechat.skill.yaml',
+    path: 'communication-agent/L1_platform_default/skills/wechat.skill.yaml',
+    level: 'L1',
+    type: 'skills',
+    desc: '企业微信技能定义：发送企微消息，支持已读状态检测。',
+    content: `# ═══════════════════════════════════════════════════
+# L1 Platform Default — skills/wechat.skill.yaml
+# ═══════════════════════════════════════════════════
+
+name: WECHAT
+description: 向企业微信用户/群发送消息
+version: 1.0.0
+
+input:
+  targetId:
+    type: string
+    required: true
+  messageContent:
+    type: string
+    required: true
+  bizContext:
+    type: object
+    required: true
+
+output:
+  touchStatus:
+    type: string
+    enum: [REACHED, NOT_REACHED]
+    description: 对方是否已读
+  intent:
+    type: string
+    enum: [AGREE, REJECT, PARTIAL, NONE]
+  confidence:
+    type: float
+  businessCompleted:
+    type: boolean`
+  },
+  'l1-skill-feishu': {
+    name: 'feishu.skill.yaml',
+    path: 'communication-agent/L1_platform_default/skills/feishu.skill.yaml',
+    level: 'L1',
+    type: 'skills',
+    desc: '飞书技能定义：支持飞书个人消息及群通知，适用于内部员工沟通场景。',
+    content: `# ═══════════════════════════════════════════════════
+# L1 Platform Default — skills/feishu.skill.yaml
+# ═══════════════════════════════════════════════════
+
+name: FEISHU
+description: 通过飞书向内部用户/群发送通知消息
+version: 1.0.0
+
+input:
+  userId:
+    type: string
+    description: 飞书用户 ID
+  groupId:
+    type: string
+    description: 飞书群聊 ID（与 userId 二选一）
+  messageContent:
+    type: string
+    required: true
+  bizContext:
+    type: object
+    required: true
+
+output:
+  touchStatus:
+    type: string
+    enum: [REACHED, NOT_REACHED]
+  intent:
+    type: string
+    enum: [NONE]
+  businessCompleted:
+    type: boolean`
+  },
+  'l1-priority': {
+    name: 'priority.yaml',
+    path: 'communication-agent/L1_platform_default/rules/priority.yaml',
+    level: 'L1',
+    type: 'rules',
+    desc: '平台默认渠道优先级顺序，当业务层或实例层未指定时使用。',
+    content: `# ═══════════════════════════════════════════════════
+# L1 Platform Default — rules/priority.yaml
+# 维护方: 平台研发 · 可被 L2/L3 层覆盖
+# ═══════════════════════════════════════════════════
+
+# 默认渠道优先级（数字越小优先级越高）
+priority:
+  CALL:   1
+  SMS:    2
+  WECHAT: 3
+  FEISHU: 4`
+  },
+  'l2-hotel-guardrails': {
+    name: 'guardrails.yaml',
+    path: 'communication-agent/L2_biz_scenario/hotel_refund/guardrails.yaml',
+    level: 'L2',
+    type: 'guardrails',
+    desc: '酒旅退款业务强制规则：退款金额超过 5000 元必须转人工处理。',
+    content: `# ═══════════════════════════════════════════════════
+# L2 Biz Scenario — hotel_refund/guardrails.yaml
+# 维护方: 业务运营
+# ═══════════════════════════════════════════════════
+
+rules:
+
+  - name: amount_limit_handoff
+    description: 退款金额大于 5000 元必须转人工
+    condition: bizContext.amount > 5000
+    action: handoff
+    severity: error
+    handoff_reason: "高金额退款，需人工介入确认"
+
+  - name: vip_merchant_handoff
+    description: VIP 商家（level >= 3）必须转人工
+    condition: targetProfile.merchantLevel >= 3
+    action: handoff
+    severity: error
+    handoff_reason: "VIP 商家，优先人工服务"
+
+  - name: dispute_order_block
+    description: 处于纠纷状态的订单禁止自动沟通
+    condition: bizContext.orderStatus == "DISPUTE"
+    action: abort_task
+    severity: error`
+  },
+  'l2-hotel-rules': {
+    name: 'rules.yaml',
+    path: 'communication-agent/L2_biz_scenario/hotel_refund/rules.yaml',
+    level: 'L2',
+    type: 'rules',
+    desc: '酒旅退款业务决策规则：外呼优先，每日最多尝试次数及评分权重配置。',
+    content: `# ═══════════════════════════════════════════════════
+# L2 Biz Scenario — hotel_refund/rules.yaml
+# 维护方: 业务运营
+# ═══════════════════════════════════════════════════
+
+channels:
+  - name: CALL
+    priority: 1
+    dailyMaxAttempts: 2
+  - name: SMS
+    priority: 2
+    dailyMaxAttempts: 1
+
+scoring:
+  weights:
+    successRate:    0.60   # 预测完成概率
+    cost:          -0.20   # 负权重（成本越高扣分越多）
+    intrusiveness: -0.20   # 负权重（打扰程度越高扣分越多）
+    failurePenalty: 0.10   # 已失败次数惩罚因子`
+  },
+  'l2-punish-guardrails': {
+    name: 'guardrails.yaml',
+    path: 'communication-agent/L2_biz_scenario/account_punish/guardrails.yaml',
+    level: 'L2',
+    type: 'guardrails',
+    desc: '账号处罚申诉场景：禁止外呼，避免因处罚类事项电话打扰用户造成负面情绪。',
+    content: `# ═══════════════════════════════════════════════════
+# L2 Biz Scenario — account_punish/guardrails.yaml
+# 维护方: 业务运营
+# ═══════════════════════════════════════════════════
+
+rules:
+
+  - name: no_call_for_punish
+    description: 账号处罚类场景禁止外呼
+    condition: bizContext.bizType == "punish"
+    action: remove_channel [CALL]
+    severity: error
+
+  - name: no_call_high_emotion
+    description: 用户情绪风险高时禁止主动外呼
+    condition: targetProfile.emotionRisk == "HIGH"
+    action: remove_channel [CALL]
+    severity: warning`
+  },
+  'l2-punish-rules': {
+    name: 'rules.yaml',
+    path: 'communication-agent/L2_biz_scenario/account_punish/rules.yaml',
+    level: 'L2',
+    type: 'rules',
+    desc: '账号处罚申诉渠道规则：优先短信，其次企业微信。',
+    content: `# ═══════════════════════════════════════════════════
+# L2 Biz Scenario — account_punish/rules.yaml
+# 维护方: 业务运营
+# ═══════════════════════════════════════════════════
+
+channels:
+  - name: SMS
+    priority: 1
+    dailyMaxAttempts: 2
+  - name: WECHAT
+    priority: 2
+    dailyMaxAttempts: 1
+
+scoring:
+  weights:
+    successRate:    0.70
+    cost:          -0.10
+    intrusiveness: -0.30
+    failurePenalty: 0.15`
+  },
+  'l3-refund-rules': {
+    name: 'rules.yaml',
+    path: 'communication-agent/L3_agent_instance/refund_agent_001/rules.yaml',
+    level: 'L3',
+    type: 'rules',
+    desc: '酒旅退款实例决策规则：渠道顺序 CALL→SMS，每渠道最多2次，失败等待5分钟。',
+    content: `# ═══════════════════════════════════════════════════
+# L3 Agent Instance — refund_agent_001/rules.yaml
+# 维护方: 业务运营 · 在 L0-L2 收窄后的集合内决策
+# ═══════════════════════════════════════════════════
+
+name: 酒旅退款沟通 Agent
+
+# 可用渠道顺序（在 L0-L2 收窄后的集合内）
+selection:
+  order: [CALL, SMS]       # 先外呼，再短信
+
+# 回退策略
+fallback:
+  CALL: SMS
+  SMS: null
+
+# 重试规则
+retry:
+  maxAttempts: 2           # 每个渠道最多尝试 2 次
+  backoff: 300             # 失败后等待 5 分钟再试（秒）`
+  },
+  'l3-refund-spec': {
+    name: 'spec.yaml',
+    path: 'communication-agent/L3_agent_instance/refund_agent_001/spec.yaml',
+    level: 'L3',
+    type: 'spec',
+    desc: '酒旅退款实例规范：明确沟通目标、意图枚举、置信度阈值及画像配置。',
+    content: `# ═══════════════════════════════════════════════════
+# L3 Agent Instance — refund_agent_001/spec.yaml
+# ═══════════════════════════════════════════════════
+
+goalType:   REFUND_INTENT   # 沟通目标：获取退款意图
+targetType: MERCHANT        # 对象类型：商家
+
+# 意图相关
+intentEnum:
+  - AGREE
+  - REJECT
+  - PARTIAL
+confidenceThreshold: 0.80
+autoFollowUp: true          # 触达但无意图时自动追问
+
+# 转人工条件
+slaThreshold: 15            # 剩余 15 分钟转人工
+enableSentimentCheck: true
+
+# 画像配置
+enableProfileRead: true
+enableProfileUpdate: true`
+  },
+  'l3-refund-playbook': {
+    name: 'playbook.md',
+    path: 'communication-agent/L3_agent_instance/refund_agent_001/playbook.md',
+    level: 'L3',
+    type: 'playbook',
+    desc: '酒旅退款 Agent 的人类可读说明文档，不参与运行时决策。',
+    content: `# 酒旅商家退款确认 Agent
+
+## 用途
+本实例用于向酒旅商家发起退款确认沟通，自动获取商家对
+用户退款申请的明确态度（同意 / 拒绝 / 部分同意）。
+
+## 适用渠道
+支持外呼 (CALL)、短信 (SMS) 两种渠道。
+
+## 执行策略
+- 优先外呼，若外呼未接通则尝试短信
+- 每个渠道最多尝试 2 次
+- 失败后等待 5 分钟再重试
+
+## 成功条件
+商家明确表态且置信度 ≥ 0.8，同时业务系统确认
+退款状态更新。
+
+## 转人工条件
+- SLA 剩余时间 < 15 分钟
+- 所有可用渠道均已尝试无果
+- 用户/商家出现情绪风险词（可选）
+- 退款金额 > 5000 元（L2 层硬约束）
+
+## 注意事项
+配置详情请参考同目录下的 rules.yaml 和 spec.yaml。`
+  },
+  'l3-punish-rules': {
+    name: 'rules.yaml',
+    path: 'communication-agent/L3_agent_instance/punish_agent_001/rules.yaml',
+    level: 'L3',
+    type: 'rules',
+    desc: '账号处罚申诉实例决策规则。',
+    content: `# ═══════════════════════════════════════════════════
+# L3 Agent Instance — punish_agent_001/rules.yaml
+# ═══════════════════════════════════════════════════
+
+name: 账号处罚申诉沟通 Agent
+
+selection:
+  order: [SMS, WECHAT]
+
+fallback:
+  SMS: WECHAT
+  WECHAT: null
+
+retry:
+  maxAttempts: 2
+  backoff: 600`
+  },
+  'l4-overrides': {
+    name: 'overrides.yaml',
+    path: 'communication-agent/L4_case_overrides/case_20260311_001/overrides.yaml',
+    level: 'L4',
+    type: 'overrides',
+    desc: '任务级动态覆盖配置，优先级最高，运行时生成，基于当前工单的即时事实。',
+    content: `# ═══════════════════════════════════════════════════
+# L4 Case Overrides — case_20260311_001/overrides.yaml
+# 运行时动态生成 · 优先级最高
+# ═══════════════════════════════════════════════════
+
+caseId: case_20260311_001
+
+overrides:
+  # 初始为空，若运行中发现以下情况会动态写入：
+  # - 用户反馈账号封禁，站内消息不可达
+  # - 临时缩短 SLA
+  # - 商家主动拒绝继续沟通
+
+# 示例（运行时可能追加）：
+# - action: remove_channel
+#   channels: [WECHAT, FEISHU]
+#   reason: "用户反馈账号已封禁，收不到站内消息"
+#
+# - action: update_sla
+#   newSla: 10`
+  },
+  'l4-context': {
+    name: 'context.yaml',
+    path: 'communication-agent/L4_case_overrides/case_20260311_001/context.yaml',
+    level: 'L4',
+    type: 'context',
+    desc: '运行时上下文（Facts），由引擎自动维护，记录当前任务的所有动态状态。',
+    content: `# ═══════════════════════════════════════════════════
+# L4 Case Overrides — case_20260311_001/context.yaml
+# 由引擎维护，非人工配置
+# ═══════════════════════════════════════════════════
+
+taskId: case_20260311_001
+playbookId: refund_agent_001
+goalType: REFUND_INTENT
+targetId: merchant_123
+deadline: "2026-03-11T19:00:00Z"
+timeRemaining: 3600             # 秒，动态更新
+operationComplexity: MEDIUM
+
+targetProfile:
+  historyPickupRate: 0.80
+  preferredChannels: [SMS]
+
+attemptHistory:
+  - channel: CALL
+    attemptTime: "2026-03-11T17:15:00Z"
+    result: NO_ANSWER
+    touchStatus: NOT_REACHED
+    intent: null
+    confidence: null
+  - channel: SMS
+    attemptTime: "2026-03-11T17:20:00Z"
+    result: SENT
+    touchStatus: REACHED
+    intent: NONE
+    confidence: 0
+
+latestTouchStatus: REACHED
+latestIntent: NONE
+latestConfidence: 0
+businessCompleted: false
+currentChannel: null`
+  }
+};
+
+/* ══════════════════════════════════════════════════════
+   DATA: LEVEL TREE STRUCTURE
+══════════════════════════════════════════════════════ */
+const LEVEL_TREE = [
+  {
+    id: 'l0', badge: 'L0', badgeClass: 'badge-l0',
+    name: '平台硬底线',
+    sub: '研发维护 · 不可被覆盖',
+    files: [
+      { key: 'l0-guardrails', icon: '🛡', name: 'guardrails.yaml' },
+      { key: 'l0-audit',      icon: '📋', name: 'audit_spec.yaml' }
+    ]
+  },
+  {
+    id: 'l1', badge: 'L1', badgeClass: 'badge-l1',
+    name: '平台默认规则',
+    sub: '研发维护 · 可被下层覆盖',
+    files: [
+      { key: 'l1-channels',    icon: '📡', name: 'channels.yaml' },
+      { folder: true, name: 'skills/' },
+      { key: 'l1-skill-call',  icon: '📞', name: '  call.skill.yaml', indent: true },
+      { key: 'l1-skill-sms',   icon: '💬', name: '  sms.skill.yaml', indent: true },
+      { key: 'l1-skill-wechat',icon: '🔗', name: '  wechat.skill.yaml', indent: true },
+      { key: 'l1-skill-feishu',icon: '🐦', name: '  feishu.skill.yaml', indent: true },
+      { folder: true, name: 'rules/' },
+      { key: 'l1-priority',    icon: '⚖', name: '  priority.yaml', indent: true }
+    ]
+  },
+  {
+    id: 'l2', badge: 'L2', badgeClass: 'badge-l2',
+    name: '业务场景规则',
+    sub: '运营维护',
+    files: [
+      { folder: true, name: 'hotel_refund/' },
+      { key: 'l2-hotel-guardrails', icon: '🛡', name: '  guardrails.yaml', indent: true },
+      { key: 'l2-hotel-rules',      icon: '📐', name: '  rules.yaml', indent: true },
+      { folder: true, name: 'account_punish/' },
+      { key: 'l2-punish-guardrails',icon: '🛡', name: '  guardrails.yaml', indent: true },
+      { key: 'l2-punish-rules',     icon: '📐', name: '  rules.yaml', indent: true }
+    ]
+  },
+  {
+    id: 'l3', badge: 'L3', badgeClass: 'badge-l3',
+    name: 'Agent 实例配置',
+    sub: '运营创建',
+    files: [
+      { folder: true, name: 'refund_agent_001/' },
+      { key: 'l3-refund-rules',    icon: '📐', name: '  rules.yaml', indent: true },
+      { key: 'l3-refund-spec',     icon: '📄', name: '  spec.yaml', indent: true },
+      { key: 'l3-refund-playbook', icon: '📖', name: '  playbook.md', indent: true },
+      { folder: true, name: 'punish_agent_001/' },
+      { key: 'l3-punish-rules',    icon: '📐', name: '  rules.yaml', indent: true }
+    ]
+  },
+  {
+    id: 'l4', badge: 'L4', badgeClass: 'badge-l4',
+    name: '任务 Case 实例',
+    sub: '运行时生成',
+    files: [
+      { folder: true, name: 'case_20260311_001/' },
+      { key: 'l4-overrides', icon: '⚡', name: '  overrides.yaml', indent: true },
+      { key: 'l4-context',   icon: '🔄', name: '  context.yaml', indent: true }
+    ]
+  }
+];
+
+/* ══════════════════════════════════════════════════════
+   DATA: FLOW STEPS
+══════════════════════════════════════════════════════ */
+const FLOW_STEPS = [
+  {
+    num: 1, phase: '配置加载', title: '加载分层配置',
+    result: '初始渠道全集: [CALL, SMS, WECHAT, FEISHU]',
+    resultType: 'neutral',
+    configs: [
+      { key: 'l0-guardrails', label: 'L0 guardrails.yaml', badge: 'L0', badgeClass: 'badge-l0' },
+      { key: 'l1-channels',   label: 'L1 channels.yaml',   badge: 'L1', badgeClass: 'badge-l1' },
+      { key: 'l1-skill-call', label: 'L1 call.skill.yaml', badge: 'L1', badgeClass: 'badge-l1' },
+      { key: 'l1-skill-sms',  label: 'L1 sms.skill.yaml',  badge: 'L1', badgeClass: 'badge-l1' },
+      { key: 'l1-priority',   label: 'L1 priority.yaml',   badge: 'L1', badgeClass: 'badge-l1' },
+      { key: 'l2-hotel-guardrails', label: 'L2 hotel_refund/guardrails.yaml', badge: 'L2', badgeClass: 'badge-l2' },
+      { key: 'l2-hotel-rules',      label: 'L2 hotel_refund/rules.yaml',      badge: 'L2', badgeClass: 'badge-l2' },
+      { key: 'l3-refund-rules',     label: 'L3 refund_agent_001/rules.yaml',  badge: 'L3', badgeClass: 'badge-l3' },
+      { key: 'l3-refund-spec',      label: 'L3 refund_agent_001/spec.yaml',   badge: 'L3', badgeClass: 'badge-l3' },
+      { key: 'l4-overrides',        label: 'L4 overrides.yaml（空）',         badge: 'L4', badgeClass: 'badge-l4' }
+    ],
+    action: '按 L0→L1→L2→L3→L4 顺序加载配置，后层覆盖前层同名规则（L0 不可覆盖）。L3 规则指定渠道顺序 [CALL, SMS]，每渠道最多尝试 2 次。',
+    output: '初始可用渠道全集：[CALL, SMS, WECHAT, FEISHU]\n（L3 规则实际只使用 CALL 和 SMS）',
+    facts: []
+  },
+  {
+    num: 2, phase: 'Stage 1 · 任务初始化', title: '任务校验与初始化',
+    result: '校验通过 · Task_Ready',
+    resultType: 'success',
+    configs: [
+      { key: 'l3-refund-spec', label: 'L3 spec.yaml (goalType, targetType)', badge: 'L3', badgeClass: 'badge-l3' },
+      { key: 'l0-guardrails',  label: 'L0 guardrails.yaml (黑名单校验)',     badge: 'L0', badgeClass: 'badge-l0' }
+    ],
+    action: '上游传入 targetId=merchant_123、bizContext、deadline=19:00。校验 goalType 和 targetType 是否匹配；调用黑名单服务检查 targetId。',
+    output: '{"task_status": "Task_Ready", "task_id": "case_20260311_001"}',
+    facts: [
+      ['taskId', 'case_20260311_001'],
+      ['goalType', 'REFUND_INTENT'],
+      ['targetId', 'merchant_123'],
+      ['deadline', '2026-03-11T19:00:00Z'],
+      ['attemptHistory', '[]'],
+      ['businessCompleted', 'false']
+    ]
+  },
+  {
+    num: 3, phase: 'Stage 2 · 上下文构建', title: '构建业务 Context',
+    result: 'Context_Ready · timeRemaining=7200s',
+    resultType: 'success',
+    configs: [
+      { key: 'l3-refund-spec', label: 'L3 spec.yaml (goalType)', badge: 'L3', badgeClass: 'badge-l3' }
+    ],
+    action: '计算剩余时间：deadline - now = 7200 秒。根据 goalType=REFUND_INTENT 自动判定操作复杂度为「中」（需商家确认）。',
+    output: '{"context_status": "Context_Ready", "timeRemaining": 7200, "operationComplexity": "MEDIUM"}',
+    facts: [
+      ['timeRemaining', '7200s'],
+      ['operationComplexity', 'MEDIUM']
+    ]
+  },
+  {
+    num: 4, phase: 'Stage 3 · 策略决策（第1轮）', title: '选择首选渠道 → CALL',
+    result: '选中 CALL（评分最高）',
+    resultType: 'success',
+    configs: [
+      { key: 'l3-refund-rules', label: 'L3 rules.yaml (selection.order)', badge: 'L3', badgeClass: 'badge-l3' },
+      { key: 'l0-guardrails',   label: 'L0 guardrails.yaml (夜间禁呼/每日上限)', badge: 'L0', badgeClass: 'badge-l0' },
+      { key: 'l2-hotel-rules',  label: 'L2 hotel_refund/rules.yaml (业务优先级)', badge: 'L2', badgeClass: 'badge-l2' }
+    ],
+    action: '检查 CALL 是否可用：当前 17:00 未超时段（21:00 后禁呼）；今日未尝试过 CALL（< 3次）；L3 规则顺序首位为 CALL。综合评分最高，选择 CALL。',
+    output: '{"currentChannel": "CALL", "strategy_status": "Strategy_Ready"}',
+    facts: [
+      ['currentChannel', 'CALL']
+    ]
+  },
+  {
+    num: 5, phase: 'Stage 4 · 渠道执行（第1轮）', title: '发起外呼 → 无人接听',
+    result: 'NOT_REACHED · 无人接听',
+    resultType: 'fail',
+    configs: [
+      { key: 'l1-skill-call', label: 'L1 call.skill.yaml', badge: 'L1', badgeClass: 'badge-l1' }
+    ],
+    action: '调用外呼 API，传入 targetId 和 bizContext；外呼工具根据 bizType=refund 选择剧本 script_refund_v2 执行外呼。',
+    output: '{"touchStatus": "NOT_REACHED", "intent": "NONE", "confidence": 0, "businessCompleted": false}',
+    facts: []
+  },
+  {
+    num: 6, phase: 'Stage 4 · 结果验证（第1轮）', title: '验证外呼结果',
+    result: '验证通过 · 无意图（confidence < 0.8）',
+    resultType: 'neutral',
+    configs: [
+      { key: 'l3-refund-spec', label: 'L3 spec.yaml (intentEnum, confidenceThreshold)', badge: 'L3', badgeClass: 'badge-l3' }
+    ],
+    action: '验证意图有效性：intent=NONE 不在枚举结果集，置信度 0 < 0.8，视为无有效意图。',
+    output: '{"validation": "OK", "latestTouchStatus": "NOT_REACHED", "latestIntent": "NONE"}',
+    facts: [
+      ['latestTouchStatus', 'NOT_REACHED'],
+      ['latestIntent', 'NONE'],
+      ['latestConfidence', '0'],
+      ['businessCompleted', 'false']
+    ]
+  },
+  {
+    num: 7, phase: 'Stage 4 · 循环判断（第1轮后）', title: '判断是否继续 → 切换 SMS',
+    result: '继续下一轮 → SMS',
+    resultType: 'neutral',
+    configs: [
+      { key: 'l3-refund-spec',  label: 'L3 spec.yaml (slaThreshold)', badge: 'L3', badgeClass: 'badge-l3' },
+      { key: 'l0-guardrails',   label: 'L0 guardrails.yaml (每日上限)', badge: 'L0', badgeClass: 'badge-l0' }
+    ],
+    action: 'businessCompleted=false，未成功。检查是否还有其他渠道可用：L3 规则中顺序 [CALL, SMS]，CALL 已用，SMS 尚未尝试（每日上限未超）。继续下一轮，尝试 SMS。',
+    output: '{"loop_decision": "CONTINUE", "nextChannel": "SMS"}',
+    facts: [
+      ['attemptHistory', 'CALL × 1（NOT_REACHED）']
+    ]
+  },
+  {
+    num: 8, phase: 'Stage 3 · 策略决策（第2轮）', title: '选择次选渠道 → SMS',
+    result: '选中 SMS',
+    resultType: 'success',
+    configs: [
+      { key: 'l3-refund-rules', label: 'L3 rules.yaml (顺序)', badge: 'L3', badgeClass: 'badge-l3' },
+      { key: 'l0-guardrails',   label: 'L0 guardrails.yaml (SMS 可用性)', badge: 'L0', badgeClass: 'badge-l0' }
+    ],
+    action: 'Facts 中 attemptHistory 显示 SMS 未用，无时段限制，今日未使用。选择 SMS。',
+    output: '{"currentChannel": "SMS", "strategy_status": "Strategy_Ready"}',
+    facts: [
+      ['currentChannel', 'SMS']
+    ]
+  },
+  {
+    num: 9, phase: 'Stage 4 · 渠道执行（第2轮）', title: '发送短信 → 成功下发',
+    result: 'REACHED · 短信已下发',
+    resultType: 'success',
+    configs: [
+      { key: 'l1-skill-sms', label: 'L1 sms.skill.yaml', badge: 'L1', badgeClass: 'badge-l1' }
+    ],
+    action: '调用短信 API，传入 targetId 和 bizContext；短信工具根据 bizType=refund 选择模板 template_refund_confirm 发送短信。',
+    output: '{"touchStatus": "REACHED", "intent": "NONE", "confidence": 0, "businessCompleted": false}',
+    facts: []
+  },
+  {
+    num: 10, phase: 'Stage 4 · 结果验证（第2轮）', title: '验证短信结果',
+    result: '验证通过 · 触达成功但无意图',
+    resultType: 'neutral',
+    configs: [
+      { key: 'l3-refund-spec', label: 'L3 spec.yaml (意图阈值)', badge: 'L3', badgeClass: 'badge-l3' }
+    ],
+    action: '验证意图：intent=NONE，置信度 0 < 0.8，无有效意图。短信仅能确认下发，无法实时获取意图。',
+    output: '{"latestTouchStatus": "REACHED", "latestIntent": "NONE", "businessCompleted": false}',
+    facts: [
+      ['latestTouchStatus', 'REACHED'],
+      ['latestIntent', 'NONE'],
+      ['latestConfidence', '0'],
+      ['businessCompleted', 'false']
+    ]
+  },
+  {
+    num: 11, phase: 'Stage 4 · 循环判断（第2轮后）', title: '无合法渠道 → 触发转人工',
+    result: 'HANDOFF · 无合法渠道',
+    resultType: 'fail',
+    configs: [
+      { key: 'l3-refund-spec',  label: 'L3 spec.yaml (成功条件、SLA阈值)', badge: 'L3', badgeClass: 'badge-l3' },
+      { key: 'l0-guardrails',   label: 'L0 guardrails.yaml (每日上限)', badge: 'L0', badgeClass: 'badge-l0' }
+    ],
+    action: 'businessCompleted=false，未成功。检查是否还有其他渠道：L3 规则中仅 CALL 和 SMS，均已尝试；无其他可用渠道。根据「无合法渠道」原则，立即转人工。',
+    output: '{"handoff": true, "handoff_reason": "无合法渠道且业务未完成"}',
+    facts: [
+      ['attemptHistory', 'CALL × 1, SMS × 1'],
+      ['handoffReason', '无合法渠道且业务未完成']
+    ]
+  },
+  {
+    num: 12, phase: 'Stage 5 · 任务归档', title: '归档沉淀沟通数据',
+    result: '数据已归档 · Archiving',
+    resultType: 'neutral',
+    configs: [
+      { key: 'l3-refund-spec', label: 'L3 spec.yaml (画像配置)', badge: 'L3', badgeClass: 'badge-l3' }
+    ],
+    action: '归档完整任务数据到数据库，更新商家行为画像（历史接通率等），沉淀本次自动沟通数据。',
+    output: '{"archiving": "OK", "profile_updated": true}',
+    facts: []
+  },
+  {
+    num: 13, phase: 'Stage 5 · 结果回传', title: '回传结果给 Planner',
+    result: 'HANDOFF · 任务完成',
+    resultType: 'neutral',
+    configs: [],
+    action: '向上游 Planner 返回最终任务结果，包含自动阶段状态、最终意图、尝试轮次及转人工原因。',
+    output: `{
+  "task_id": "case_20260311_001",
+  "auto_phase_result": {
+    "auto_status": "HANDOFF",
+    "final_intent": "NONE",
+    "business_completed": false,
+    "total_attempt": 2,
+    "handoff_reason": "无合法渠道且业务未完成"
+  }
+}`,
+    facts: []
+  }
+];
+
+/* ══════════════════════════════════════════════════════
+   DATA: INSTANCES
+══════════════════════════════════════════════════════ */
+const INSTANCES = [
+  { id:'refund_agent_001', name:'酒旅退款 — 沟通 Agent', scenario:'hotel_refund', goal:'REFUND_INTENT', target:'MERCHANT', channels:['CALL','SMS'], status:'running', tasks:127, successRate:'79%', created:'2026-01-15' },
+  { id:'punish_agent_001', name:'账号处罚申诉 — 沟通 Agent', scenario:'account_punish', goal:'SUPPLEMENT', target:'USER', channels:['SMS','WECHAT'], status:'running', tasks:89, successRate:'71%', created:'2026-01-22' },
+  { id:'growth_agent_002', name:'作者培养提醒 — 沟通 Agent', scenario:'creator_growth', goal:'NOTIFICATION', target:'CREATOR', channels:['WECHAT','FEISHU'], status:'running', tasks:214, successRate:'91%', created:'2026-02-08' },
+  { id:'recruit_agent_001', name:'商家招募外呼 — 沟通 Agent', scenario:'merchant_recruit', goal:'NOTIFICATION', target:'MERCHANT', channels:['CALL'], status:'paused', tasks:56, successRate:'64%', created:'2026-02-20' },
+  { id:'notice_agent_001', name:'内部通知 — 飞书沟通 Agent', scenario:'internal_notice', goal:'NOTIFICATION', target:'INTERNAL', channels:['FEISHU'], status:'running', tasks:331, successRate:'98%', created:'2026-03-01' }
+];
+
+/* ══════════════════════════════════════════════════════
+   DATA: TASKS
+══════════════════════════════════════════════════════ */
+const TASKS = [
+  { id:'T20260310_091', agent:'refund_agent_001', target:'merchant_210', goal:'REFUND_INTENT', channels:'CALL', intent:'—', status:'running', time:'17:42' },
+  { id:'T20260310_088', agent:'refund_agent_001', target:'merchant_198', goal:'REFUND_INTENT', channels:'CALL→SMS', intent:'AGREE', status:'success', time:'17:31' },
+  { id:'T20260310_085', agent:'punish_agent_001', target:'user_5521',    goal:'SUPPLEMENT',   channels:'SMS', intent:'NONE', status:'handoff', time:'17:18' },
+  { id:'T20260310_081', agent:'growth_agent_002', target:'creator_331',  goal:'NOTIFICATION', channels:'WECHAT', intent:'—', status:'running', time:'17:05' },
+  { id:'T20260310_074', agent:'refund_agent_001', target:'merchant_177', goal:'REFUND_INTENT', channels:'CALL', intent:'—', status:'failed', time:'16:58' },
+  { id:'T20260310_068', agent:'recruit_agent_001', target:'merchant_120',goal:'NOTIFICATION', channels:'CALL', intent:'REJECT', status:'success', time:'16:44' },
+  { id:'T20260310_061', agent:'refund_agent_001', target:'merchant_099', goal:'REFUND_INTENT', channels:'CALL→SMS', intent:'PARTIAL', status:'handoff', time:'16:30' },
+  { id:'T20260310_055', agent:'punish_agent_001', target:'user_4812',    goal:'SUPPLEMENT',   channels:'SMS→WECHAT', intent:'AGREE', status:'success', time:'16:21' },
+  { id:'T20260310_049', agent:'growth_agent_002', target:'creator_280',  goal:'NOTIFICATION', channels:'FEISHU', intent:'—', status:'success', time:'16:10' },
+  { id:'T20260310_041', agent:'refund_agent_001', target:'merchant_071', goal:'REFUND_INTENT', channels:'CALL', intent:'REJECT', status:'success', time:'15:55' },
+  { id:'T20260310_033', agent:'notice_agent_001', target:'team_ops',     goal:'NOTIFICATION', channels:'FEISHU', intent:'—', status:'success', time:'15:40' },
+  { id:'T20260310_024', agent:'refund_agent_001', target:'merchant_052', goal:'REFUND_INTENT', channels:'SMS', intent:'AGREE', status:'success', time:'15:22' }
+];
+
+/* ══════════════════════════════════════════════════════
+   RENDER: FILE TREE (Part 1)
+══════════════════════════════════════════════════════ */
+function renderFileSidebar() {
+  const sidebar = document.getElementById('fileSidebar');
+  sidebar.innerHTML = LEVEL_TREE.map((level, idx) => `
+    <div class="level-group">
+      <div class="level-header ${idx === 0 ? 'open' : ''}" onclick="toggleLevel(this)">
+        <span class="level-badge ${level.badgeClass}">${level.badge}</span>
+        <span class="level-name">${level.name}</span>
+        <span class="level-chevron">▶</span>
+      </div>
+      <div class="level-files" ${idx === 0 ? 'style="display:block"' : ''}>
+        ${level.files.map(f => f.folder
+          ? `<div class="file-node folder"><span class="file-icon">📁</span>${f.name}</div>`
+          : `<div class="file-node" id="fn-${f.key}" onclick="openFileViewer('${f.key}')">
+               <span class="file-icon">${f.icon}</span>${f.name}
+             </div>`
+        ).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleLevel(header) {
+  header.classList.toggle('open');
+  const files = header.nextElementSibling;
+  files.style.display = files.style.display === 'block' ? 'none' : 'block';
+}
+
+const TYPE_LABELS = { guardrails:'guardrails', rules:'rules', spec:'spec', skills:'skills', overrides:'overrides', playbook:'playbook', context:'context' };
+const LEVEL_META = {
+  L0: { maintainer:'平台研发', override:'不可被覆盖', cls:'badge-l0' },
+  L1: { maintainer:'平台研发', override:'可被 L2-L4 覆盖', cls:'badge-l1' },
+  L2: { maintainer:'业务运营', override:'可被 L3-L4 覆盖', cls:'badge-l2' },
+  L3: { maintainer:'业务运营', override:'可被 L4 覆盖', cls:'badge-l3' },
+  L4: { maintainer:'运行时动态', override:'优先级最高', cls:'badge-l4' }
+};
+
+function openFileViewer(key) {
+  const f = CONFIG_FILES[key];
+  if (!f) return;
+  document.querySelectorAll('.file-node').forEach(n => n.classList.remove('active'));
+  const node = document.getElementById('fn-' + key);
+  if (node) node.classList.add('active');
+  const meta = LEVEL_META[f.level];
+  const content = document.getElementById('fileViewerContent');
+  content.innerHTML = `
+    <div class="viewer-header">
+      <div>
+        <div class="viewer-file-path">${f.path}</div>
+        <div class="viewer-file-name">${f.name}</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="level-badge ${meta.cls}">${f.level}</span>
+        <span class="file-type-badge type-${f.type}">${TYPE_LABELS[f.type]}</span>
+      </div>
+    </div>
+    <div class="level-info-grid">
+      <div class="info-card"><div class="info-card-label">维护方</div><div class="info-card-value">${meta.maintainer}</div></div>
+      <div class="info-card"><div class="info-card-label">覆盖规则</div><div class="info-card-value">${meta.override}</div></div>
+      <div class="info-card"><div class="info-card-label">文件类型</div><div class="info-card-value">${TYPE_LABELS[f.type]}</div></div>
+    </div>
+    <div class="viewer-desc">${f.desc}</div>
+    <pre class="code-block"><span class="code-lang">yaml</span>${escapeHtml(f.content)}</pre>
+  `;
+}
+
+/* ══════════════════════════════════════════════════════
+   RENDER: FLOW STEPS (Part 2)
+══════════════════════════════════════════════════════ */
+function renderFlowSteps() {
+  const panel = document.getElementById('flowStepsPanel');
+  panel.innerHTML = FLOW_STEPS.map(s => `
+    <div class="flow-step-item" id="fs-${s.num}" onclick="openFlowDetail(${s.num})">
+      <div class="step-num">${s.num}</div>
+      <div class="step-info">
+        <div class="step-phase">${s.phase}</div>
+        <div class="step-title">${s.title}</div>
+        <div class="step-result result-${s.resultType}">${s.result}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openFlowDetail(num) {
+  const s = FLOW_STEPS[num - 1];
+  document.querySelectorAll('.flow-step-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('fs-' + num).classList.add('active');
+
+  const factsHtml = s.facts.length ? `
+    <div class="detail-section">
+      <div class="detail-section-title">Facts 更新</div>
+      <div class="result-box">
+        <div class="result-box-header"><span>context.yaml 变更</span></div>
+        <table class="facts-table">
+          ${s.facts.map(([k, v]) => `<tr><td>${k}</td><td class="${v.startsWith('T') || v === 'true' ? 'tag-success' : v === 'false' ? 'tag-fail' : 'tag-info'}">${v}</td></tr>`).join('')}
+        </table>
+      </div>
+    </div>` : '';
+
+  const configsHtml = s.configs.length ? `
+    <div class="detail-section">
+      <div class="detail-section-title">加载的配置文件</div>
+      <div class="config-chips">
+        ${s.configs.map(c => `
+          <span class="config-chip" onclick="openModal('${c.key}')">
+            <span class="chip-badge level-badge ${c.badgeClass}" style="padding:1px 5px;border-radius:2px;font-size:9px">${c.badge}</span>
+            ${c.label}
+          </span>
+        `).join('')}
+      </div>
+    </div>` : '';
+
+  document.getElementById('flowDetailPanel').innerHTML = `
+    <div class="detail-header">
+      <div class="detail-step-num">${s.num}</div>
+      <div class="detail-meta">
+        <div class="detail-phase">${s.phase}</div>
+        <div class="detail-title">${s.title}</div>
+      </div>
+      <span class="badge ${s.resultType === 'success' ? 'badge-success' : s.resultType === 'fail' ? 'badge-failed' : 'badge-pending'}">
+        ${s.result}
+      </span>
+    </div>
+    ${configsHtml}
+    <div class="detail-section">
+      <div class="detail-section-title">执行动作</div>
+      <div class="action-box"><p>${s.action}</p></div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">输出结果</div>
+      <div class="result-box">
+        <div class="result-box-header"><span>output</span></div>
+        <pre>${escapeHtml(s.output)}</pre>
+      </div>
+    </div>
+    ${factsHtml}
+  `;
+}
+
+/* ══════════════════════════════════════════════════════
+   RENDER: SYSTEM PAGES (Part 3)
+══════════════════════════════════════════════════════ */
+function renderInstanceList() {
+  const statusBadge = s => s === 'running'
+    ? '<span class="badge badge-running"><span class="badge-dot"></span>运行中</span>'
+    : '<span class="badge badge-pending"><span class="badge-dot"></span>已暂停</span>';
+  document.getElementById('instanceList').innerHTML = INSTANCES.map(inst => `
+    <div class="agent-detail-card">
+      <div class="agent-card-header">
+        <div>
+          <div class="agent-card-name">${inst.name}</div>
+          <div class="agent-card-id">${inst.id}</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          ${statusBadge(inst.status)}
+          <button class="btn btn-outline btn-sm">编辑</button>
+          <button class="btn btn-danger btn-sm">删除</button>
+        </div>
+      </div>
+      <div class="agent-card-body">
+        <div class="agent-info-row">
+          <div class="agent-info-item"><label>业务场景</label><span>${inst.scenario}</span></div>
+          <div class="agent-info-item"><label>沟通目标</label><span>${inst.goal}</span></div>
+          <div class="agent-info-item"><label>对象类型</label><span>${inst.target}</span></div>
+          <div class="agent-info-item"><label>历史任务数</label><span style="color:var(--accent)">${inst.tasks}</span></div>
+          <div class="agent-info-item"><label>自动成功率</label><span style="color:var(--green)">${inst.successRate}</span></div>
+          <div class="agent-info-item"><label>创建日期</label><span class="text-muted">${inst.created}</span></div>
+        </div>
+        <div><label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:6px">启用渠道</label>
+          <div class="channel-tags">
+            ${['CALL','SMS','WECHAT','FEISHU'].map(ch => `<span class="channel-tag ${inst.channels.includes(ch) ? 'active' : ''}">${ch}</span>`).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderTaskTable() {
+  const statusBadge = s => ({
+    success: '<span class="badge badge-success"><span class="badge-dot"></span>成功</span>',
+    running: '<span class="badge badge-running"><span class="badge-dot"></span>执行中</span>',
+    handoff: '<span class="badge badge-handoff"><span class="badge-dot"></span>转人工</span>',
+    failed:  '<span class="badge badge-failed"><span class="badge-dot"></span>失败</span>'
+  })[s] || '';
+  document.getElementById('taskTableBody').innerHTML = TASKS.map(t => `
+    <tr>
+      <td class="text-mono" style="color:var(--accent)">${t.id}</td>
+      <td>${t.agent}</td>
+      <td class="text-mono">${t.target}</td>
+      <td>${t.goal}</td>
+      <td class="text-mono" style="font-size:11px">${t.channels}</td>
+      <td>${t.intent}</td>
+      <td>${statusBadge(t.status)}</td>
+      <td class="text-muted text-mono">${t.time}</td>
+      <td>
+        <div class="action-btns">
+          <button class="btn btn-outline btn-sm">详情</button>
+          ${t.status === 'running' ? '<button class="btn btn-danger btn-sm">中止</button>' : ''}
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function filterTasks(type, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const data = type === 'all' ? TASKS : TASKS.filter(t => t.status === type);
+  const statusBadge = s => ({
+    success: '<span class="badge badge-success"><span class="badge-dot"></span>成功</span>',
+    running: '<span class="badge badge-running"><span class="badge-dot"></span>执行中</span>',
+    handoff: '<span class="badge badge-handoff"><span class="badge-dot"></span>转人工</span>',
+    failed:  '<span class="badge badge-failed"><span class="badge-dot"></span>失败</span>'
+  })[s] || '';
+  document.getElementById('taskTableBody').innerHTML = data.map(t => `
+    <tr>
+      <td class="text-mono" style="color:var(--accent)">${t.id}</td>
+      <td>${t.agent}</td>
+      <td class="text-mono">${t.target}</td>
+      <td>${t.goal}</td>
+      <td class="text-mono" style="font-size:11px">${t.channels}</td>
+      <td>${t.intent}</td>
+      <td>${statusBadge(t.status)}</td>
+      <td class="text-muted text-mono">${t.time}</td>
+      <td><div class="action-btns"><button class="btn btn-outline btn-sm">详情</button></div></td>
+    </tr>
+  `).join('');
+}
+
+const LOG_ENTRIES = [
+  {t:'17:42:03',l:'info',m:'<span class="hl">Task_Validating</span> case_20260310_091 · agent=refund_agent_001 · target=merchant_210'},
+  {t:'17:42:03',l:'success',m:'Task_Ready · 参数校验通过 · <span class="dim">blacklist=false</span>'},
+  {t:'17:42:04',l:'info',m:'Context_Building · timeRemaining=4716s · operationComplexity=MEDIUM'},
+  {t:'17:42:04',l:'info',m:'Strategy_Planning · 检查渠道可用性 · 当前时间 17:42 ∈ [09:00,21:00]'},
+  {t:'17:42:04',l:'success',m:'Strategy_Ready · 选中渠道 <span class="hl">CALL</span> · score=0.76'},
+  {t:'17:42:05',l:'info',m:'Executing · 下发外呼指令 · targetId=merchant_210 · bizType=refund'},
+  {t:'17:42:38',l:'warn',m:'外呼结果 · touchStatus=<span class="hl">NOT_REACHED</span> · 无人接听 · attempt=1'},
+  {t:'17:42:38',l:'info',m:'Runtime_Update · attemptHistory +1 · latestTouchStatus=NOT_REACHED'},
+  {t:'17:42:38',l:'info',m:'Strategy_Planning · 重新决策 · CALL 已用 1 次 · 切换至 SMS'},
+  {t:'17:42:39',l:'success',m:'Strategy_Ready · 选中渠道 <span class="hl">SMS</span>'},
+  {t:'17:42:40',l:'info',m:'Executing · 下发短信指令 · template=template_refund_confirm'},
+  {t:'17:42:41',l:'success',m:'短信结果 · touchStatus=<span class="hl">REACHED</span> · 成功下发'},
+  {t:'17:42:41',l:'warn',m:'intent=NONE · confidence=0 · 短信无法实时获取意图'},
+  {t:'17:31:10',l:'success',m:'Task <span class="hl">T20260310_088</span> · End_Success · intent=AGREE · total_attempt=2'},
+  {t:'17:18:55',l:'warn',m:'Task <span class="hl">T20260310_085</span> · Handoff_To_Human · reason=无合法渠道'},
+  {t:'17:05:02',l:'info',m:'Task_Validating T20260310_081 · agent=growth_agent_002 · target=creator_331'},
+  {t:'16:58:44',l:'error',m:'Task <span class="hl">T20260310_074</span> · Task_Failed · reason=Context_Failed · 关键数据缺失'},
+  {t:'16:44:12',l:'success',m:'Task T20260310_068 · End_Success · intent=REJECT · total_attempt=1'},
+  {t:'16:30:09',l:'warn',m:'Task T20260310_061 · Handoff_To_Human · reason=SLA即将到期(<15min)'},
+  {t:'16:21:33',l:'success',m:'Task T20260310_055 · End_Success · intent=AGREE · total_attempt=2'},
+];
+
+function renderLogs() {
+  document.getElementById('logStream').innerHTML = LOG_ENTRIES.map(e => `
+    <div class="log-line">
+      <span class="log-time">${e.t}</span>
+      <span class="log-level ${e.l}">${e.l.toUpperCase()}</span>
+      <span class="log-msg">${e.m}</span>
+    </div>
+  `).join('');
+}
+
+function refreshLogs() {
+  const stream = document.getElementById('logStream');
+  const newEntry = {t: '17:42:'+Math.floor(Math.random()*60).toString().padStart(2,'0'), l:'info', m:`Heartbeat · agents running: 3 · tasks active: 12`};
+  LOG_ENTRIES.unshift(newEntry);
+  renderLogs();
+}
+
+function renderChannelCards() {
+  const channels = [
+    { name:'CALL', icon:'📞', cost:'¥0.30/次', intrusiveness:'HIGH', freq:true, notes:'外呼需遵守夜间禁呼规则（21:00–09:00 禁止）' },
+    { name:'SMS',  icon:'💬', cost:'¥0.05/次', intrusiveness:'MEDIUM', freq:true, notes:'短信无法实时获取意图，需后续回调或人工确认' },
+    { name:'WECHAT', icon:'🔗', cost:'¥0.00',  intrusiveness:'LOW', freq:false, notes:'需用户已添加企业微信，可检测已读状态' },
+    { name:'FEISHU', icon:'🐦', cost:'¥0.00',  intrusiveness:'LOW', freq:false, notes:'仅适用于内部员工沟通场景' }
+  ];
+  document.getElementById('channelCards').innerHTML = channels.map(c => `
+    <div class="agent-detail-card" style="margin-bottom:12px">
+      <div class="agent-card-header">
+        <div>
+          <div class="agent-card-name">${c.icon} ${c.name}</div>
+          <div class="agent-card-id">L1 channels.yaml · intrusiveness: ${c.intrusiveness}</div>
+        </div>
+        <span class="badge badge-success"><span class="badge-dot"></span>已启用</span>
+      </div>
+      <div class="agent-card-body">
+        <div class="agent-info-row">
+          <div class="agent-info-item"><label>单次成本</label><span style="color:var(--green)">${c.cost}</span></div>
+          <div class="agent-info-item"><label>打扰程度</label><span>${c.intrusiveness}</span></div>
+          <div class="agent-info-item"><label>频次控制</label><span>${c.freq ? '支持' : '不支持'}</span></div>
+          <div class="agent-info-item"><label>强打断</label><span>${c.name === 'CALL' ? '是' : '否'}</span></div>
+        </div>
+        <div style="font-size:12px;color:var(--text-muted)">${c.notes}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ══════════════════════════════════════════════════════
+   MODAL
+══════════════════════════════════════════════════════ */
+function openModal(key) {
+  const f = CONFIG_FILES[key];
+  if (!f) return;
+  const meta = LEVEL_META[f.level];
+  document.getElementById('modalTitle').textContent = f.name;
+  document.getElementById('modalPath').textContent = f.path;
+  document.getElementById('modalMeta').innerHTML = `
+    <span class="level-badge ${meta.cls}">${f.level}</span>
+    <span class="file-type-badge type-${f.type}">${f.type}</span>
+    <span style="font-size:12px;color:var(--text-muted)">维护方: ${meta.maintainer}</span>
+  `;
+  document.getElementById('modalContent').textContent = f.content;
+  document.getElementById('configModal').classList.add('open');
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('configModal'))
+    document.getElementById('configModal').classList.remove('open');
+}
+
+/* ══════════════════════════════════════════════════════
+   TAB NAVIGATION
+══════════════════════════════════════════════════════ */
+function switchTab(n, btn) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.main-nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + n).classList.add('active');
+  btn.classList.add('active');
+}
+
+function switchSysPage(page, el) {
+  document.querySelectorAll('.system-page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sys-nav-item').forEach(i => i.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  if (el) el.classList.add('active');
+}
+
+/* ══════════════════════════════════════════════════════
+   FORM HANDLERS
+══════════════════════════════════════════════════════ */
+function handleCreateAgent(e) {
+  e.preventDefault();
+  const btn = e.target.querySelector('[type=submit]');
+  btn.textContent = '✓ 创建成功';
+  btn.style.background = 'var(--green)';
+  setTimeout(() => {
+    btn.textContent = '创建实例';
+    btn.style.background = '';
+    switchSysPage('instances', document.querySelector('.sys-nav-item'));
+  }, 1800);
+}
+
+/* ══════════════════════════════════════════════════════
+   UTILS
+══════════════════════════════════════════════════════ */
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ══════════════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════════════ */
+renderFileSidebar();
+renderFlowSteps();
+renderInstanceList();
+renderTaskTable();
+renderLogs();
+renderChannelCards();
+</script>
+</body>
+</html>
